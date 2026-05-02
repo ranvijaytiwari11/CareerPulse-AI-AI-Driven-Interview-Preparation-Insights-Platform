@@ -20,9 +20,20 @@ export const analyzeResume = async (req, res) => {
     const filepath = req.file.path
 
     const fileBuffer = await fs.promises.readFile(filepath)
-    const pdfData = await pdfParse(fileBuffer);
+    const pdfParseClass = typeof pdfParse === 'function' ? pdfParse : (pdfParse.PDFParse || pdfParse.default);
+    
+    let resumeText = "";
+    if (pdfParseClass.prototype && pdfParseClass.prototype.getText) {
+        // Handle pdf-parse 2.4.5+ API
+        const doc = new pdfParseClass(new Uint8Array(fileBuffer));
+        resumeText = await doc.getText();
+    } else {
+        // Handle legacy pdf-parse API
+        const pdfData = await pdfParseClass(fileBuffer);
+        resumeText = pdfData.text;
+    }
 
-    let resumeText = pdfData.text
+    resumeText = resumeText
       .replace(/\s+/g, " ")
       .trim();
 

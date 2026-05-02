@@ -11,7 +11,7 @@ import InterviewHistory from './pages/InterviewHistory'
 import Pricing from './pages/Pricing'
 import InterviewReport from './pages/InterviewReport'
 
-export const ServerUrl = "https://career-pulse-ai-interview-preparati.vercel.app"
+export const ServerUrl = import.meta.env.MODE === 'development' ? 'http://localhost:8001' : "https://career-pulse-ai-interview-preparati.vercel.app"
 
 function App() {
 

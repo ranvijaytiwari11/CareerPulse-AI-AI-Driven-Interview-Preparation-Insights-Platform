@@ -9,24 +9,38 @@ import axios from 'axios';
 import { ServerUrl } from '../App';
 import { useDispatch } from 'react-redux';
 import { setUserData } from '../redux/userSlice';
+import { useNavigate } from 'react-router-dom';
+
 function Auth({isModel = false}) {
     const dispatch = useDispatch()
+    const navigate = useNavigate();
+
+    const [errorMsg, setErrorMsg] = React.useState(null);
+    const [isLoading, setIsLoading] = React.useState(false);
 
     const handleGoogleAuth = async () => {
         try {
+            setErrorMsg(null);
+            setIsLoading(true);
             const response = await signInWithPopup(auth,provider)
             let User = response.user
             let name = User.displayName
             let email = User.email
             const result = await axios.post(ServerUrl + "/api/auth/google" , {name , email} , {withCredentials:true})
             dispatch(setUserData(result.data))
-            
-
-
-            
+            if (!isModel) {
+                navigate('/');
+            }
         } catch (error) {
             console.log(error)
-              dispatch(setUserData(null))
+            if (error.response) {
+                setErrorMsg(error.response.data.message || "Backend error occurred.");
+            } else {
+                setErrorMsg(error.message || "Failed to authenticate. Please check your connection.");
+            }
+            dispatch(setUserData(null))
+        } finally {
+            setIsLoading(false);
         }
     }
   return (
@@ -66,18 +80,22 @@ function Auth({isModel = false}) {
             </p>
 
 
+            {errorMsg && (
+                <div className='mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm text-center'>
+                    {errorMsg}
+                </div>
+            )}
+
             <motion.button 
             onClick={handleGoogleAuth}
+            disabled={isLoading}
             whileHover={{opacity:0.9 , scale:1.03}}
             whileTap={{opacity:1 , scale:0.98}}
-            className='w-full flex items-center justify-center gap-3 py-3 bg-black text-white rounded-full shadow-md '>
+            className='w-full flex items-center justify-center gap-3 py-3 bg-black text-white rounded-full shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed'>
                 <FcGoogle size={20}/>
-                Continue with Google
-
-   
+                {isLoading ? "Authenticating..." : "Continue with Google"}
             </motion.button>
         </motion.div>
-
       
     </div>
   )
