@@ -16,12 +16,16 @@ function Step2Interview({ interviewData, onFinish }) {
   const [isIntroPhase, setIsIntroPhase] = useState(true);
 
   const [isMicOn, setIsMicOn] = useState(true);
+  const isMicOnRef = useRef(true); // ref to avoid stale closures
   const recognitionRef = useRef(null);
   const [isAIPlaying, setIsAIPlaying] = useState(false);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answer, setAnswer] = useState("");
+  const answerRef = useRef(""); // ref to avoid stale closure in auto-submit
   const [feedback, setFeedback] = useState("");
+  const feedbackRef = useRef(""); // ref to avoid stale closure in auto-submit
+  const isSubmittingRef = useRef(false); // ref to avoid stale closure in auto-submit
   const [timeLeft, setTimeLeft] = useState(
     questions[0]?.timeLimit || 60
   );
@@ -108,19 +112,19 @@ function Step2Interview({ interviewData, onFinish }) {
 
       utterance.onstart = () => {
         setIsAIPlaying(true);
-        stopMic()
+        stopMic();
         videoRef.current?.play();
       };
 
-
       utterance.onend = () => {
-        videoRef.current?.pause();
-        videoRef.current.currentTime = 0;
+        if (videoRef.current) {
+          videoRef.current.pause();
+          videoRef.current.currentTime = 0;
+        }
         setIsAIPlaying(false);
 
-
-
-        if (isMicOn) {
+        // Use ref to get current mic state (not stale closure)
+        if (isMicOnRef.current) {
           startMic();
         }
         setTimeout(() => {
@@ -236,39 +240,52 @@ function Step2Interview({ interviewData, onFinish }) {
     }
   };
   const toggleMic = () => {
+    const newState = !isMicOn;
     if (isMicOn) {
       stopMic();
     } else {
       startMic();
     }
-    setIsMicOn(!isMicOn);
+    isMicOnRef.current = newState;
+    setIsMicOn(newState);
   };
 
 
-  const submitAnswer = async () => {
-    if (isSubmitting) return;
-    stopMic()
-    setIsSubmitting(true)
+  const submitAnswer = async (overrideAnswer, overrideTimeLeft) => {
+    if (isSubmittingRef.current) return;
+    stopMic();
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
+
+    // Use passed values or refs to avoid stale closure
+    const finalAnswer = overrideAnswer !== undefined ? overrideAnswer : answerRef.current;
+    const finalTimeTaken = overrideTimeLeft !== undefined
+      ? currentQuestion.timeLimit - overrideTimeLeft
+      : currentQuestion.timeLimit;
 
     try {
       const result = await axios.post(ServerUrl + "/api/interview/submit-answer", {
         interviewId,
         questionIndex: currentIndex,
-        answer,
-        timeTaken:
-          currentQuestion.timeLimit - timeLeft,
-      } , {withCredentials:true})
+        answer: finalAnswer,
+        timeTaken: finalTimeTaken,
+      }, { withCredentials: true });
 
-      setFeedback(result.data.feedback)
-      speakText(result.data.feedback)
-      setIsSubmitting(false)
+      feedbackRef.current = result.data.feedback;
+      setFeedback(result.data.feedback);
+      speakText(result.data.feedback);
     } catch (error) {
-console.log(error)
-setIsSubmitting(false)
+      console.log(error);
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
-  }
+  };
 
-  const handleNext =async () => {
+  const handleNext = async () => {
+    // Reset answer and feedback refs immediately
+    answerRef.current = "";
+    feedbackRef.current = "";
     setAnswer("");
     setFeedback("");
 
@@ -278,14 +295,8 @@ setIsSubmitting(false)
     }
 
     await speakText("Alright, let's move to the next question.");
-
-    setCurrentIndex(currentIndex + 1);
-    setTimeout(() => {
-      if (isMicOn) startMic();
-    }, 500);
-
-   
-  }
+    setCurrentIndex((prev) => prev + 1);
+  };
 
   const finishInterview = async () => {
     stopMic()
@@ -301,12 +312,13 @@ setIsSubmitting(false)
   }
 
 
-   useEffect(() => {
+  useEffect(() => {
     if (isIntroPhase) return;
     if (!currentQuestion) return;
 
-    if (timeLeft === 0 && !isSubmitting && !feedback) {
-      submitAnswer()
+    if (timeLeft === 0 && !isSubmittingRef.current && !feedbackRef.current) {
+      // Pass current refs to avoid stale closure
+      submitAnswer(answerRef.current, 0);
     }
   }, [timeLeft]);
 
@@ -328,7 +340,7 @@ setIsSubmitting(false)
 
 
   return (
-    <div className='min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-100 flex items-center justify-center p-4 sm:p-6'>
+    <div className='min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-100 flex items-center justify-center p-4 sm:p-6'>
       <div className='w-full max-w-350 min-h-[80vh] bg-white rounded-3xl shadow-2xl border border-gray-200 flex flex-col lg:flex-row overflow-hidden'>
 
         {/* video section */}
@@ -376,7 +388,7 @@ setIsSubmitting(false)
             <div className='grid grid-cols-2 gap-6 text-center'>
               <div>
                 <span className='text-2xl font-bold text-emerald-600'>{currentIndex + 1}</span>
-                <span className='text-xs text-gray-400'>Current Questions</span>
+                <span className='text-xs text-gray-400'>Current Question</span>
               </div>
 
               <div>
@@ -407,7 +419,10 @@ setIsSubmitting(false)
           }
           <textarea
             placeholder="Type your answer here..."
-            onChange={(e) => setAnswer(e.target.value)}
+            onChange={(e) => {
+              answerRef.current = e.target.value;
+              setAnswer(e.target.value);
+            }}
             value={answer}
             className="flex-1 bg-gray-100 p-4 sm:p-6 rounded-2xl resize-none outline-none border border-gray-200 focus:ring-2 focus:ring-emerald-500 transition text-gray-800" />
 
