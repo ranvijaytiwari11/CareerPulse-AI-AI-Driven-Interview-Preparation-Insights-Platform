@@ -11,7 +11,7 @@ import InterviewHistory from './pages/InterviewHistory'
 import Pricing from './pages/Pricing'
 import InterviewReport from './pages/InterviewReport'
 
-export const ServerUrl = import.meta.env.VITE_BACKEND_URL || "https://server-eta-flax-3uyd6eb6xm.vercel.app"
+export const ServerUrl = "https://career-pulse-ai-interview-preparati.vercel.app"
 
 function App() {
 
