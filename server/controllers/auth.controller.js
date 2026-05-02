@@ -2,7 +2,7 @@ import genToken from "../config/token.js"
 import User from "../models/user.model.js"
 
 
-export const googleAuth = async (req,res) => {
+export const verifyAuth = async (req,res) => {
     try {
         const {name , email} = req.body
         let user = await User.findOne({email})
@@ -25,7 +25,7 @@ export const googleAuth = async (req,res) => {
 
 
     } catch (error) {
-        return res.status(500).json({message:`Google auth error ${error}`})
+        return res.status(500).json({message:`Verify auth error ${error}`})
     }
     
 }
