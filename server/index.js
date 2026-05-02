@@ -12,7 +12,6 @@ import paymentRouter from "./routes/payment.route.js"
 const app = express()
 app.use(cors({
     origin: [
-        "http://localhost:5173",
         "https://career-pulse-ai-ai-driven-interview.vercel.app",
         process.env.FRONTEND_URL
     ].filter(Boolean),
