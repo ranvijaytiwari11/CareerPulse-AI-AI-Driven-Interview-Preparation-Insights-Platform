@@ -26,6 +26,11 @@ app.use("/api/user", userRouter)
 app.use("/api/interview" , interviewRouter)
 app.use("/api/payment" , paymentRouter)
 
+// Root Route for testing
+app.get("/", (req, res) => {
+    res.send("CareerPulse AI Backend is running successfully! 🚀");
+})
+
 // Connect to Database
 connectDb()
 
