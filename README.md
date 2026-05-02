@@ -1,4 +1,4 @@
-# CareerPulse AI / InterviewIQ 🚀
+# CareerPulse AI / CareerPulse AI 🚀
 
 A next-generation, AI-driven full-stack platform designed to help job seekers and professionals prepare for technical and behavioral interviews. Powered by cutting-edge AI models, it provides dynamic question generation, real-time feedback, and comprehensive performance insights.
 

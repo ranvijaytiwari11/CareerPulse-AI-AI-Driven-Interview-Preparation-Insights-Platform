@@ -1,7 +1,7 @@
 {
   "name": "interview-iq-prep-server",
   "version": "1.0.0",
-  "description": "Backend for InterviewIQ-Prep",
+  "description": "Backend for CareerPulse AI Backend",
   "license": "ISC",
   "author": "Ranvijay Tiwari <rt7999675@gmail.com>",
   "type": "module",
